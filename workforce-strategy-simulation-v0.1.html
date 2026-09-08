@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workforce Strategy Simulation — Control Deck</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --g-950:#10151A; --g-900:#171F25; --g-850:#1C252C; --g-800:#222C33; --g-750:#2A343C;
+  --line:#3A454E; --line-soft:#2A343C;
+  --text-1:#EDF1F3; --text-2:#9DACB5; --text-3:#67757D;
+  --amber:#E8A33D; --amber-soft:#4A3A20; --amber-line:#6B5327;
+  --cyan:#4FB0C6; --cyan-soft:#1E3A40;
+  --green:#5FA777; --green-soft:#1E362A;
+  --red:#D1574B; --red-soft:#3A2220;
+  --gold:#D4AF6A; --silver:#B9C4CB;
+  --radius:3px;
+  --font-d:'IBM Plex Sans',sans-serif;
+  --font-m:'IBM Plex Mono',monospace;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--g-950);
+  color:var(--text-1);
+  font-family:var(--font-d);
+  font-size:14px;
+  line-height:1.5;
+  min-height:100vh;
+}
+button{font-family:var(--font-d);cursor:pointer;}
+input,select,textarea{font-family:var(--font-d);}
+a{color:var(--cyan);}
+h1,h2,h3,h4{margin:0;font-weight:600;letter-spacing:.01em;}
+p{margin:0;}
+::selection{background:var(--amber-soft);}
+::-webkit-scrollbar{width:9px;height:9px;}
+::-webkit-scrollbar-track{background:var(--g-900);}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:5px;}
+
+.mono{font-family:var(--font-m);}
+.small{font-size:12px;}
+.dim{color:var(--text-2);}
+.dimmer{color:var(--text-3);}
+
+/* ---------- layout shells ---------- */
+#app{min-height:100vh;display:flex;flex-direction:column;}
+
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 20px;border-bottom:1px solid var(--line-soft);
+  background:linear-gradient(180deg,var(--g-900),var(--g-850));
+  flex-wrap:wrap;gap:10px;
+}
+.topbar-left{display:flex;align-items:center;gap:14px;}
+.topbar-brand{display:flex;flex-direction:column;line-height:1.1;}
+.topbar-brand .t1{font-size:12px;letter-spacing:.08em;color:var(--text-3);text-transform:uppercase;}
+.topbar-brand .t2{font-size:15px;font-weight:600;}
+.topbar-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+
+.team-chip{
+  display:flex;align-items:center;gap:8px;padding:5px 10px;border:1px solid var(--line);
+  border-radius:var(--radius);background:var(--g-850);
+}
+.color-dot{width:10px;height:10px;border-radius:2px;flex:none;}
+
+.readout{
+  display:flex;flex-direction:column;align-items:flex-end;padding:2px 10px;border-left:1px solid var(--line-soft);
+}
+.readout .label{font-size:10px;letter-spacing:.08em;color:var(--text-3);text-transform:uppercase;}
+.readout .value{font-family:var(--font-m);font-size:16px;font-weight:600;}
+
+.timer-box{
+  display:flex;flex-direction:column;align-items:center;padding:4px 14px;border:1px solid var(--line);
+  border-radius:var(--radius);background:var(--g-850);min-width:88px;
+}
+.timer-box .label{font-size:10px;letter-spacing:.08em;color:var(--text-3);text-transform:uppercase;}
+.timer-box .value{font-family:var(--font-m);font-size:20px;font-weight:700;}
+.timer-box.warn .value{color:var(--amber);}
+.timer-box.danger .value{color:var(--red);}
+.timer-box.off .value{color:var(--text-3);}
+
+/* ---------- panel / card chrome ---------- */
+.panel{
+  position:relative;background:var(--g-900);border:1px solid var(--line-soft);border-radius:var(--radius);
+  padding:16px;
+}
+.panel::before,.panel::after{
+  content:"";position:absolute;width:9px;height:9px;top:-1px;
+  border-top:1px solid var(--amber);pointer-events:none;
+}
+.panel::before{left:-1px;border-left:1px solid var(--amber);}
+.panel::after{right:-1px;border-right:1px solid var(--amber);}
+.panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px;flex-wrap:wrap;}
+.panel-head h3{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-2);}
+.panel-head .hint{font-size:11px;color:var(--text-3);}
+
+.stack{display:flex;flex-direction:column;gap:14px;}
+.row{display:flex;gap:14px;flex-wrap:wrap;}
+.grid{display:grid;gap:14px;}
+.grid-2{grid-template-columns:1fr 1fr;}
+.grid-3{grid-template-columns:repeat(3,1fr);}
+@media(max-width:900px){.grid-2,.grid-3{grid-template-columns:1fr;}}
+
+.main{flex:1;display:flex;}
+.content{flex:1;padding:18px;max-width:1400px;margin:0 auto;width:100%;}
+
+/* ---------- buttons ---------- */
+.btn{
+  border:1px solid var(--line);background:var(--g-850);color:var(--text-1);
+  padding:8px 14px;border-radius:var(--radius);font-size:13px;font-weight:500;
+  transition:border-color .12s,background .12s;
+}
+.btn:hover{border-color:var(--text-2);}
+.btn:disabled{opacity:.35;cursor:not-allowed;}
+.btn-amber{background:var(--amber-soft);border-color:var(--amber-line);color:var(--amber);}
+.btn-amber:hover{border-color:var(--amber);}
+.btn-cyan{background:var(--cyan-soft);border-color:#2E5A63;color:var(--cyan);}
+.btn-red{background:var(--red-soft);border-color:#6E332C;color:var(--red);}
+.btn-green{background:var(--green-soft);border-color:#3A5F46;color:var(--green);}
+.btn-ghost{background:transparent;border-color:var(--line-soft);color:var(--text-2);}
+.btn-sm{padding:5px 10px;font-size:12px;}
+.btn-block{width:100%;}
+
+/* ---------- badges / status ---------- */
+.badge{
+  display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:2px;
+  font-size:11px;letter-spacing:.04em;font-weight:600;border:1px solid transparent;
+}
+.badge-gold{background:#3A2E13;color:var(--gold);border-color:#5C4A24;}
+.badge-silver{background:#262C30;color:var(--silver);border-color:#3F4A51;}
+.badge-locked{background:var(--g-850);color:var(--text-3);border-color:var(--line-soft);}
+.badge-open{background:var(--green-soft);color:var(--green);border-color:#3A5F46;}
+.badge-warn{background:var(--amber-soft);color:var(--amber);border-color:var(--amber-line);}
+.badge-danger{background:var(--red-soft);color:var(--red);border-color:#6E332C;}
+
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block;}
+.dot-green{background:var(--green);box-shadow:0 0 6px var(--green);}
+.dot-amber{background:var(--amber);box-shadow:0 0 6px var(--amber);}
+.dot-red{background:var(--red);box-shadow:0 0 6px var(--red);}
+.dot-off{background:var(--text-3);}
+
+/* ---------- tabs / nav ---------- */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line-soft);flex-wrap:wrap;margin-bottom:16px;}
+.tab{
+  padding:9px 14px;font-size:12.5px;color:var(--text-2);border-bottom:2px solid transparent;
+  background:transparent;border-top:none;border-left:none;border-right:none;
+}
+.tab.active{color:var(--text-1);border-bottom-color:var(--amber);}
+.tab:disabled{color:var(--text-3);opacity:.4;}
+
+.sidenav{width:190px;flex:none;border-right:1px solid var(--line-soft);padding:16px 10px;background:var(--g-900);}
+.sidenav-item{
+  display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:9px 12px;border-radius:var(--radius);
+  background:transparent;border:1px solid transparent;color:var(--text-2);font-size:13px;margin-bottom:2px;
+}
+.sidenav-item.active{background:var(--g-850);border-color:var(--line-soft);color:var(--text-1);}
+.sidenav-item:hover{color:var(--text-1);}
+
+/* ---------- tables ---------- */
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{
+  text-align:left;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);
+  padding:6px 10px;border-bottom:1px solid var(--line);font-weight:600;
+}
+td{padding:8px 10px;border-bottom:1px solid var(--line-soft);}
+tr:last-child td{border-bottom:none;}
+
+/* ---------- talent card ---------- */
+.talent-card{
+  border:1px solid var(--line-soft);background:var(--g-850);border-radius:var(--radius);
+  padding:10px;display:flex;flex-direction:column;gap:8px;
+}
+.talent-card.taken{opacity:.4;}
+.talent-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+.talent-name{font-weight:600;font-size:13.5px;}
+.skillbars{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;}
+.skillbar{display:flex;flex-direction:column;align-items:center;gap:2px;}
+.skillbar .lbl{font-size:9px;color:var(--text-3);font-family:var(--font-m);}
+.skillbar .track{width:100%;height:22px;background:var(--g-800);border:1px solid var(--line-soft);position:relative;border-radius:2px;overflow:hidden;}
+.skillbar .fill{position:absolute;bottom:0;left:0;right:0;background:var(--cyan);}
+.skillbar .val{font-size:9px;font-family:var(--font-m);color:var(--text-2);}
+
+/* ---------- planning board ---------- */
+.tray{
+  display:flex;gap:10px;flex-wrap:wrap;padding:12px;border:1px dashed var(--line);border-radius:var(--radius);
+  background:var(--g-850);min-height:70px;
+}
+.tray-card{
+  border:1px solid var(--line);background:var(--g-800);border-radius:var(--radius);padding:8px 10px;
+  cursor:grab;min-width:150px;
+}
+.tray-card:active{cursor:grabbing;}
+.board{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
+@media(max-width:900px){.board{grid-template-columns:1fr;}}
+.area-col{border:1px solid var(--line-soft);border-radius:var(--radius);background:var(--g-900);min-height:150px;display:flex;flex-direction:column;}
+.area-head{
+  padding:8px 10px;border-bottom:1px solid var(--line-soft);font-family:var(--font-m);font-weight:700;
+  font-size:13px;color:var(--amber);display:flex;justify-content:space-between;align-items:center;
+}
+.area-body{flex:1;padding:8px;display:flex;flex-direction:column;gap:8px;}
+.area-body.dragover{background:var(--amber-soft);}
+.area-empty{flex:1;display:flex;align-items:center;justify-content:center;color:var(--text-3);font-size:12px;border:1px dashed var(--line-soft);border-radius:var(--radius);min-height:60px;}
+
+/* ---------- leaderboard ---------- */
+.lb-row{
+  display:grid;grid-template-columns:36px 1fr auto auto auto auto;gap:12px;align-items:center;
+  padding:10px 12px;border-bottom:1px solid var(--line-soft);
+}
+.lb-rank{font-family:var(--font-m);font-weight:700;font-size:16px;color:var(--text-2);}
+.lb-rank.top{color:var(--amber);}
+.lb-score{font-family:var(--font-m);text-align:right;}
+.lb-score .num{font-size:15px;font-weight:700;}
+.lb-score .lbl{font-size:9px;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;}
+
+/* ---------- events ---------- */
+.event-card{border:1px solid var(--line-soft);border-radius:var(--radius);padding:10px 12px;background:var(--g-850);display:flex;gap:12px;align-items:flex-start;}
+.event-card.unresolved{border-color:var(--red);background:var(--red-soft);}
+.event-icon{width:30px;height:30px;flex:none;border-radius:2px;display:flex;align-items:center;justify-content:center;font-family:var(--font-m);font-weight:700;font-size:12px;background:var(--g-800);border:1px solid var(--line);}
+
+/* ---------- misc forms ---------- */
+input[type=text],input[type=number],input[type=password],select,textarea{
+  background:var(--g-850);border:1px solid var(--line);color:var(--text-1);padding:8px 10px;border-radius:var(--radius);
+  font-size:13px;width:100%;
+}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--cyan);outline-offset:1px;}
+label{font-size:11px;color:var(--text-2);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px;}
+.field{margin-bottom:12px;}
+textarea{resize:vertical;min-height:120px;}
+
+.progress-track{height:6px;background:var(--g-800);border-radius:3px;overflow:hidden;border:1px solid var(--line-soft);}
+.progress-fill{height:100%;background:var(--amber);}
+
+.login-shell{flex:1;display:flex;align-items:center;justify-content:center;padding:20px;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(79,176,198,.06), transparent 40%),
+    radial-gradient(circle at 85% 80%, rgba(232,163,61,.06), transparent 40%),
+    var(--g-950);
+}
+.login-card{width:100%;max-width:420px;}
+.login-title{font-size:20px;margin-bottom:4px;}
+.login-sub{color:var(--text-3);font-size:12.5px;margin-bottom:20px;}
+
+.footer-tick{padding:8px 20px;border-top:1px solid var(--line-soft);color:var(--text-3);font-size:11px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;}
+
+.toast{
+  position:fixed;bottom:20px;right:20px;background:var(--g-850);border:1px solid var(--line);
+  padding:10px 16px;border-radius:var(--radius);font-size:13px;z-index:999;box-shadow:0 6px 24px rgba(0,0,0,.4);
+  border-left:3px solid var(--cyan);
+}
+.toast.warn{border-left-color:var(--amber);}
+.toast.err{border-left-color:var(--red);}
+
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(8,11,14,.72);z-index:1000;
+  display:flex;align-items:center;justify-content:center;padding:20px;
+}
+.modal-box{
+  width:100%;max-width:420px;background:var(--g-900);border:1px solid var(--line);border-radius:var(--radius);
+  padding:20px;position:relative;
+}
+.modal-box::before,.modal-box::after{
+  content:"";position:absolute;width:9px;height:9px;top:-1px;
+  border-top:1px solid var(--red);pointer-events:none;
+}
+.modal-box::before{left:-1px;border-left:1px solid var(--red);}
+.modal-box::after{right:-1px;border-right:1px solid var(--red);}
+.modal-title{font-size:14px;font-weight:600;margin-bottom:8px;}
+.modal-msg{color:var(--text-2);font-size:13px;margin-bottom:18px;line-height:1.5;}
+.modal-actions{display:flex;justify-content:flex-end;gap:10px;}
+
+.kv{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--line-soft);font-size:12.5px;}
+.kv:last-child{border-bottom:none;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* =========================================================================
+   WORKFORCE STRATEGY SIMULATION — CONTROL DECK
+   Single-file SPA: state store + scoring engine + disruption engine +
+   phase controller + render layer. No frameworks, local persistence only.
+   ========================================================================= */
+
+const STORAGE_KEY = 'wfsim_state_v2';
+const AREAS = ['A','B','C','D','E'];
+const AREA_NAMES = {A:'Operations',B:'Commercial',C:'Technology',D:'Customer',E:'Enablement'};
+const FACILITATOR_KEY = 'FACILITATOR';
+
+/* ---------------------------- deterministic RNG ---------------------------- */
+function mulberry32(seed){
+  return function(){
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+let rng = mulberry32(20260701);
+function ri(min,max){ return Math.floor(rng()*(max-min+1))+min; }
+function pick(arr){ return arr[Math.floor(rng()*arr.length)]; }
+function uid(p){ return p+'_'+Math.random().toString(36).slice(2,9); }
+
+const FIRST = ['Ade','Bina','Chandra','Dewi','Erik','Farah','Gilang','Hana','Indra','Joko','Kirana','Lestari','Made','Nia','Omar','Putri','Rafi','Sari','Taufik','Uma','Vikram','Wulan','Yusuf','Zahra','Bram','Citra','Dian','Fajar','Galih','Hendra'];
+const LAST = ['Wijaya','Santoso','Pratama','Kusuma','Halim','Setiawan','Gunawan','Wibowo','Suryadi','Hartono','Yulianto','Kurniawan','Saputra','Handoko','Nugroho','Firmansyah','Salim','Chandra','Permata','Utomo'];
+
+function genName(usedNames){
+  let n;
+  do{ n = pick(FIRST)+' '+pick(LAST); } while(usedNames.has(n));
+  usedNames.add(n);
+  return n;
+}
+
+function buildTalentPool(){
+  const used = new Set();
+  const talents = [];
+  // Gold tier: 10 talents, strong in 1-2 areas, higher cost
+  for(let i=0;i<10;i++){
+    const skills = {}; AREAS.forEach(a=>skills[a]=ri(35,60));
+    const peakAreas = rng()<0.4 ? [pick(AREAS)] : [pick(AREAS),pick(AREAS)];
+    [...new Set(peakAreas)].forEach(a=>skills[a]=ri(80,98));
+    talents.push({
+      id: uid('tal'), name: genName(used), tier:'Gold',
+      cost: ri(65,95), skills, learning:0, recruitedBy:null, active:true, history:[]
+    });
+  }
+  // Silver tier: 34 talents, broader but lower peaks, lower cost
+  for(let i=0;i<34;i++){
+    const skills = {}; AREAS.forEach(a=>skills[a]=ri(25,55));
+    const peak = pick(AREAS);
+    skills[peak] = ri(60,80);
+    talents.push({
+      id: uid('tal'), name: genName(used), tier:'Silver',
+      cost: ri(18,42), skills, learning:0, recruitedBy:null, active:true, history:[]
+    });
+  }
+  return talents;
+}
+
+const TEAM_COLORS = ['#E8A33D','#4FB0C6','#5FA777','#D1574B','#B98CD9','#E0C34E','#6FA8DC','#E88BAE'];
+const MIN_TEAMS = 2, MAX_TEAMS = 8;
+const MIN_PLAYERS_PER_TEAM = 1, MAX_PLAYERS_PER_TEAM = 6;
+function clampTeamCount(n){ return Math.max(MIN_TEAMS, Math.min(MAX_TEAMS, parseInt(n,10) || MIN_TEAMS)); }
+function clampPlayersPerTeam(n){ return Math.max(MIN_PLAYERS_PER_TEAM, Math.min(MAX_PLAYERS_PER_TEAM, parseInt(n,10) || 1)); }
+
+function buildTeams(n){
+  const teams = [];
+  for(let i=0;i<n;i++){
+    teams.push({
+      id: uid('team'), name:'Team '+String.fromCharCode(65+i), color: TEAM_COLORS[i%TEAM_COLORS.length],
+      code: 'T'+(i+1)+'-'+Math.random().toString(36).slice(2,5).toUpperCase(),
+      budget:0, evpScore:null, evpText:'', evpSubmitted:false,
+      roster:[], operational:0, readiness:0, complementary:0, final:0
+    });
+  }
+  return teams;
+}
+
+function freshState(numTeams, playersPerTeam, numRounds){
+  numTeams = clampTeamCount(numTeams===undefined?6:numTeams);
+  playersPerTeam = clampPlayersPerTeam(playersPerTeam===undefined?6:playersPerTeam);
+  numRounds = numRounds || 3;
+  const talents = buildTalentPool();
+  const teams = buildTeams(numTeams);
+  const rounds = [];
+  for(let r=1;r<=numRounds;r++){
+    rounds.push({ number:r, status:'locked', teamSubs:{}, results:{}, bonus:{} });
+  }
+  return {
+    session:{ name:'Q3 Workforce Strategy Simulation', numRounds, evpMultiplier:3, currentRound:0, numTeams, playersPerTeam },
+    role: null, // {type:'facilitator'} | {type:'team', teamId}
+    ui:{ route:'login', teamTab:'dashboard', adminTab:'teams', loginMode:null, selectedEventTeam:'', selectedEventType:'Retirement', selectedEventTalent:'' },
+    phaseStatus: { evp:'locked', marketplace:'locked' },
+    leaderboardPublished:false,
+    gameClosed:false,
+    winnerTeamId:null,
+    talents, teams, rounds,
+    assignments:[], // {id, teamId, talentId, area, round, exposureType, points}
+    events:[], // {id,type,targetTeamId,targetTalentId,round,description,status}
+    logs:[]
+  };
+}
+
+let state = load() || freshState();
+
+function save(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){} }
+function load(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return null;
+    return JSON.parse(raw);
+  }catch(e){ return null; }
+}
+function persistAndRender(){ save(); render(); }
+
+function logAction(type, teamId, details){
+  state.logs.unshift({ id:uid('log'), type, teamId: teamId||null, round: state.session.currentRound, timestamp: new Date().toISOString(), details });
+}
+
+function toast(msg, kind){
+  const t = document.createElement('div');
+  t.className = 'toast'+(kind?(' '+kind):'');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 3200);
+}
+
+/* In-app confirmation modal — used instead of the native browser confirm(),
+   which is silently suppressed inside sandboxed/embedded preview frames and
+   gives no visual feedback either way. Transient UI state, not persisted. */
+let pendingConfirm = null; // {title, message, onYes}
+function askConfirm(title, message, onYes){
+  pendingConfirm = { title, message, onYes };
+  render();
+}
+function resolveConfirm(result){
+  const cb = pendingConfirm && pendingConfirm.onYes;
+  pendingConfirm = null;
+  if(result && typeof cb === 'function') cb();
+  else render();
+}
+function renderConfirmModal(){
+  if(!pendingConfirm) return '';
+  return '<div class="modal-overlay"><div class="modal-box">'
+    +'<div class="modal-title">'+esc(pendingConfirm.title)+'</div>'
+    +'<div class="modal-msg">'+esc(pendingConfirm.message)+'</div>'
+    +'<div class="modal-actions">'
+    +'<button class="btn btn-ghost" onclick="resolveConfirm(false)">Cancel</button>'
+    +'<button class="btn btn-red" onclick="resolveConfirm(true)">Confirm</button>'
+    +'</div></div></div>';
+}
+
+/* ============================== SCORING ENGINE ============================== */
+
+function teamRoster(team){
+  return team.roster.map(id => state.talents.find(t=>t.id===id)).filter(Boolean);
+}
+
+function computeStartingBudget(evpScore){
+  return Math.round(evpScore * state.session.evpMultiplier);
+}
+
+function currentAssignmentsFor(teamId, round){
+  return state.assignments.filter(a=>a.teamId===teamId && a.round===round);
+}
+function priorAssignmentsFor(teamId, talentId, beforeRound){
+  return state.assignments.filter(a=>a.teamId===teamId && a.talentId===talentId && a.round < beforeRound);
+}
+
+function exposureTypeFor(teamId, talentId, area, round){
+  const prior = priorAssignmentsFor(teamId, talentId, round).sort((a,b)=>a.round-b.round);
+  if(prior.length===0) return 'New';
+  const mostRecent = prior[prior.length-1];
+  if(mostRecent.area === area) return 'Specialization';
+  const everWorked = prior.some(p=>p.area===area);
+  return everWorked ? 'Repeated' : 'New';
+}
+function pointsForExposure(type){
+  return type==='New' ? 15 : type==='Specialization' ? 8 : type==='Repeated' ? 12 : 0;
+}
+
+// Called when a team locks their assignment for a round (creates Assignment records)
+function commitAssignment(team, round, placements){
+  // placements: {area: talentId}
+  AREAS.forEach(area=>{
+    const talentId = placements[area];
+    if(!talentId) return;
+    const type = exposureTypeFor(team.id, talentId, area, round);
+    const pts = pointsForExposure(type);
+    const talent = state.talents.find(t=>t.id===talentId);
+    const before = talent.learning || 0;
+    talent.learning = Math.min(100, before + pts);
+    const awarded = talent.learning - before;
+    state.assignments.push({
+      id: uid('asg'), teamId: team.id, talentId, area, round,
+      exposureType: type, points: awarded
+    });
+    talent.history.push({round, area});
+  });
+}
+
+function computeOperationalForRound(team, round){
+  const asg = currentAssignmentsFor(team.id, round);
+  if(asg.length===0) return 0;
+  let sum = 0;
+  asg.forEach(a=>{
+    const talent = state.talents.find(t=>t.id===a.talentId);
+    if(talent) sum += talent.skills[a.area];
+  });
+  let avg = sum / AREAS.length; // out of 100, unfilled areas count as 0
+  const bonus = state.rounds[round-1] && state.rounds[round-1].bonus[team.id] ? state.rounds[round-1].bonus[team.id] : 0;
+  return Math.min(100, Math.round(avg + bonus));
+}
+
+function computeReadiness(team){
+  const roster = teamRoster(team);
+  if(roster.length===0) return 0;
+  const sum = roster.reduce((s,t)=>s+(t.learning||0),0);
+  return Math.round(sum / roster.length);
+}
+
+function computeComplementary(team){
+  const roster = teamRoster(team);
+  if(roster.length===0) return 0;
+  let sum = 0;
+  AREAS.forEach(a=>{
+    const best = Math.max(0,...roster.map(t=>t.skills[a]));
+    sum += best;
+  });
+  return Math.round(sum / AREAS.length);
+}
+
+function recomputeTeamScores(team){
+  const scoredRounds = state.rounds.filter(r=>r.status==='scored' && r.results[team.id]!==undefined);
+  team.operational = scoredRounds.length
+    ? Math.round(scoredRounds.reduce((s,r)=>s+r.results[team.id],0)/scoredRounds.length)
+    : 0;
+  team.readiness = computeReadiness(team);
+  team.complementary = computeComplementary(team);
+  team.final = Math.round(0.4*team.operational + 0.4*team.readiness + 0.2*team.complementary);
+}
+
+function recomputeAllScores(){
+  state.teams.forEach(recomputeTeamScores);
+}
+
+/* ============================== DISRUPTION ENGINE ============================== */
+
+function triggerDisruptionEvent(type, targetTeamId, targetTalentId){
+  const team = state.teams.find(t=>t.id===targetTeamId);
+  const talent = state.talents.find(t=>t.id===targetTalentId);
+  if(!team || !talent) return;
+  const round = state.session.currentRound;
+  let description = '';
+
+  function clearCurrentRoundPlacement(){
+    const idx = state.assignments.findIndex(a=>a.teamId===team.id && a.talentId===talent.id && a.round===round);
+    if(idx>=0) state.assignments.splice(idx,1);
+    // also reopen round submission for this team if it was locked
+    const r = state.rounds[round-1];
+    if(r) r.teamSubs[team.id] = false;
+  }
+
+  if(type==='Retirement'){
+    talent.active = false;
+    clearCurrentRoundPlacement();
+    description = talent.name+' has retired and permanently exits '+team.name+"'s roster. The vacated area must be backfilled or left unproduced.";
+  } else if(type==='Rotation'){
+    clearCurrentRoundPlacement();
+    description = talent.name+' has been force-rotated out of their current placement. '+team.name+' must re-place them before locking this round.';
+  } else if(type==='Resignation'){
+    talent.active = false;
+    talent.recruitedBy = null;
+    team.roster = team.roster.filter(id=>id!==talent.id);
+    clearCurrentRoundPlacement();
+    description = talent.name+' has resigned and left '+team.name+'. A replacement may be sourced from the Marketplace if budget allows.';
+  } else if(type==='LEAP'){
+    clearCurrentRoundPlacement();
+    const r = state.rounds[round-1];
+    if(r){ r.bonus[team.id] = (r.bonus[team.id]||0) + 10; }
+    description = talent.name+' has been placed on a LEAP lateral-expansion assignment: rotated out this round, but '+team.name+' earns a +10 Operational bonus this round to reflect the growth opportunity.';
+  }
+
+  state.events.unshift({
+    id: uid('evt'), type, targetTeamId, targetTalentId,
+    round, description, status:'Triggered'
+  });
+  logAction('DisruptionTrigger', targetTeamId, type+' → '+talent.name);
+}
+
+function acknowledgeEvent(eventId){
+  const ev = state.events.find(e=>e.id===eventId);
+  if(ev){ ev.status='Acknowledged'; }
+  persistAndRender();
+}
+
+/* ============================== PHASE / ROUND CONTROL ============================== */
+
+function unlockEVP(){
+  state.phaseStatus.evp = 'open';
+  logAction('PhaseUnlock', null, 'EVP Workspace unlocked');
+  persistAndRender();
+}
+function closeEVPApplyScores(){
+  const missing = state.teams.filter(t=>t.evpScore===null || t.evpScore===undefined);
+  if(missing.length){ toast('Enter an EVP score for every team first.', 'warn'); return; }
+  state.teams.forEach(t=>{ t.budget = computeStartingBudget(t.evpScore); });
+  state.phaseStatus.evp = 'closed';
+  state.phaseStatus.marketplace = 'open';
+  logAction('PhaseUnlock', null, 'EVP scored, budgets applied, Marketplace unlocked');
+  persistAndRender();
+}
+function closeMarketplace(){
+  const incomplete = state.teams.filter(t=>t.roster.length<5);
+  if(incomplete.length){
+    askConfirm(
+      'Incomplete Rosters',
+      incomplete.length+' team(s) have not completed recruitment (1 Gold + 4 Silver). Close the Marketplace anyway?',
+      doCloseMarketplace
+    );
+    return;
+  }
+  doCloseMarketplace();
+}
+function doCloseMarketplace(){
+  state.phaseStatus.marketplace = 'closed';
+  state.session.currentRound = 1;
+  state.rounds[0].status = 'open';
+  logAction('PhaseUnlock', null, 'Marketplace closed, Round 1 opened');
+  persistAndRender();
+  toast('Marketplace closed. Round 1 is open.');
+}
+
+function lockTeamRound(team, round){
+  const r = state.rounds[round-1];
+  r.teamSubs[team.id] = true;
+  logAction('RoundLock', team.id, 'Locked assignment for round '+round);
+  persistAndRender();
+}
+
+function scoreCurrentRound(){
+  const round = state.session.currentRound;
+  const r = state.rounds[round-1];
+  state.teams.forEach(team=>{
+    const op = computeOperationalForRound(team, round);
+    r.results[team.id] = op;
+  });
+  r.status = 'scored';
+  recomputeAllScores();
+  logAction('ScoreEntry', null, 'Round '+round+' scored');
+  persistAndRender();
+}
+
+function unlockNextRound(){
+  const round = state.session.currentRound;
+  if(round < state.session.numRounds){
+    state.session.currentRound = round+1;
+    state.rounds[round].status = 'open';
+    logAction('PhaseUnlock', null, 'Round '+(round+1)+' opened');
+  } else {
+    state.gameClosed = true;
+    let best = null;
+    state.teams.forEach(t=>{ if(!best || t.final>best.final) best = t; });
+    state.winnerTeamId = best ? best.id : null;
+    logAction('Publish', null, 'Final round complete — session closed');
+  }
+  persistAndRender();
+}
+
+function publishLeaderboard(){
+  state.leaderboardPublished = true;
+  logAction('Publish', null, 'Leaderboard published to teams');
+  persistAndRender();
+}
+
+function declareWinner(){
+  recomputeAllScores();
+  let best = null;
+  state.teams.forEach(t=>{ if(!best || t.final>best.final) best = t; });
+  state.winnerTeamId = best ? best.id : null;
+  state.gameClosed = true;
+  state.leaderboardPublished = true;
+  logAction('Publish', state.winnerTeamId, 'Winner declared');
+  persistAndRender();
+}
+
+function applyTeamConfig(newNumTeams, newPlayersPerTeam){
+  const n = clampTeamCount(newNumTeams);
+  const p = clampPlayersPerTeam(newPlayersPerTeam);
+  askConfirm(
+    'Rebuild Teams',
+    'Changing the team count or size regenerates all teams with fresh codes and wipes current rosters, budgets, scores, assignments and events for this session ('+n+' teams × '+p+' players). Continue?',
+    ()=>doApplyTeamConfig(n,p)
+  );
+}
+function doApplyTeamConfig(n,p){
+  const keepName = state.session.name;
+  const keepRounds = state.session.numRounds;
+  const keepMultiplier = state.session.evpMultiplier;
+  localStorage.removeItem(STORAGE_KEY);
+  state = freshState(n, p, keepRounds);
+  state.session.name = keepName;
+  state.session.evpMultiplier = keepMultiplier;
+  state.role = {type:'facilitator'};
+  state.ui.route = 'admin';
+  state.ui.adminTab = 'teams';
+  persistAndRender();
+  toast(n+' teams rebuilt at '+p+' players/team.');
+}
+
+function resetSimulation(){
+  askConfirm(
+    'Reset Simulation',
+    'This permanently wipes all teams, rosters, budgets, scores, disruption events and logs, and starts a brand new session. This cannot be undone. Continue?',
+    doResetSimulation
+  );
+}
+function doResetSimulation(){
+  const wasFacilitator = !!(state.role && state.role.type==='facilitator');
+  localStorage.removeItem(STORAGE_KEY);
+  state = freshState();
+  if(wasFacilitator){
+    // keep the facilitator signed in against the fresh session instead of
+    // bouncing them back to the login screen
+    state.role = {type:'facilitator'};
+    state.ui.route = 'admin';
+    state.ui.adminTab = 'teams';
+  }
+  persistAndRender();
+  toast('Simulation reset — fresh session ready.');
+}
+
+/* ============================== AUTH / ROLE ============================== */
+
+function loginAsTeam(code){
+  const team = state.teams.find(t=>t.code.toLowerCase()===code.trim().toLowerCase());
+  if(!team){ toast('Team code not recognized.', 'err'); return; }
+  state.role = {type:'team', teamId:team.id};
+  state.ui.route = 'team';
+  state.ui.teamTab = 'dashboard';
+  persistAndRender();
+}
+function loginAsFacilitator(key){
+  if(key.trim().toUpperCase() !== FACILITATOR_KEY){ toast('Facilitator key incorrect.', 'err'); return; }
+  state.role = {type:'facilitator'};
+  state.ui.route = 'admin';
+  persistAndRender();
+}
+function logout(){
+  state.role = null;
+  state.ui.route = 'login';
+  state.ui.loginMode = null;
+  persistAndRender();
+}
+
+/* ============================== RENDER HELPERS ============================== */
+
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function currentTeam(){
+  if(!state.role || state.role.type!=='team') return null;
+  return state.teams.find(t=>t.id===state.role.teamId);
+}
+
+function phaseLabel(){
+  if(state.gameClosed) return 'Session Closed';
+  if(state.phaseStatus.evp!=='closed') return 'Phase 1 · EVP';
+  if(state.phaseStatus.marketplace!=='closed') return 'Phase 2 · Recruitment';
+  return 'Phase 3 · Round '+state.session.currentRound+' / '+state.session.numRounds;
+}
+
+function skillBar(label, val){
+  return '<div class="skillbar"><div class="lbl">'+label+'</div><div class="track"><div class="fill" style="height:'+val+'%"></div></div><div class="val">'+val+'</div></div>';
+}
+
+function talentCardMarket(t, team){
+  const taken = !!t.recruitedBy;
+  const goldFull = team.roster.some(id=>{const x=state.talents.find(tt=>tt.id===id); return x&&x.tier==='Gold';});
+  const silverCount = team.roster.filter(id=>{const x=state.talents.find(tt=>tt.id===id); return x&&x.tier==='Silver';}).length;
+  let disableReason = '';
+  if(taken) disableReason = 'Recruited';
+  else if(t.tier==='Gold' && goldFull) disableReason = 'Gold slot filled';
+  else if(t.tier==='Silver' && silverCount>=4) disableReason = 'Silver slots filled';
+  else if(t.cost > team.budget) disableReason = 'Over budget';
+  const badgeClass = t.tier==='Gold' ? 'badge-gold' : 'badge-silver';
+  return '<div class="talent-card'+(taken?' taken':'')+'">'
+    +'<div class="talent-top"><div><div class="talent-name">'+esc(t.name)+'</div>'
+    +'<span class="badge '+badgeClass+'">'+t.tier+'</span></div>'
+    +'<div class="mono" style="text-align:right"><div style="font-size:15px;font-weight:700;">'+t.cost+'</div><div class="dimmer" style="font-size:9px;">COINS</div></div></div>'
+    +'<div class="skillbars">'+AREAS.map(a=>skillBar(a,t.skills[a])).join('')+'</div>'
+    +(taken
+      ? '<div class="small dim">Recruited by '+esc((state.teams.find(x=>x.id===t.recruitedBy)||{}).name||'another team')+'</div>'
+      : '<button class="btn btn-amber btn-sm" '+(disableReason?'disabled':'')+' onclick="recruitTalent(\''+t.id+'\')">'+(disableReason||'Recruit')+'</button>')
+    +'</div>';
+}
+
+function recruitTalent(talentId){
+  const team = currentTeam();
+  if(!team) return;
+  const t = state.talents.find(x=>x.id===talentId);
+  if(!t || t.recruitedBy) return;
+  const goldFull = team.roster.some(id=>{const x=state.talents.find(tt=>tt.id===id); return x&&x.tier==='Gold';});
+  const silverCount = team.roster.filter(id=>{const x=state.talents.find(tt=>tt.id===id); return x&&x.tier==='Silver';}).length;
+  if(t.tier==='Gold' && goldFull){ toast('Your Gold slot is already filled.','warn'); return; }
+  if(t.tier==='Silver' && silverCount>=4){ toast('All 4 Silver slots are filled.','warn'); return; }
+  if(t.cost > team.budget){ toast('Not enough budget.','warn'); return; }
+  t.recruitedBy = team.id;
+  team.budget -= t.cost;
+  team.roster.push(t.id);
+  logAction('Recruit', team.id, 'Recruited '+t.name+' ('+t.tier+')');
+  persistAndRender();
+}
+
+/* ============================== PLANNING BOARD DRAG/DROP ============================== */
+
+let dragTalentId = null;
+
+function boardPlacementsForTeam(team, round){
+  const placements = {};
+  currentAssignmentsFor(team.id, round).forEach(a=>{ placements[a.area]=a.talentId; });
+  return placements;
+}
+
+// Draft placements kept in a transient (non-persisted) object while a team is arranging,
+// so nothing commits until "Lock Assignment" is pressed.
+window.__draft = window.__draft || {};
+function draftFor(teamId, round){
+  const key = teamId+'_'+round;
+  if(!window.__draft[key]) window.__draft[key] = boardPlacementsForTeam({id:teamId}, round);
+  return window.__draft[key];
+}
+
+function onDragStart(ev, talentId){ dragTalentId = talentId; ev.dataTransfer.effectAllowed='move'; }
+function onDragOverZone(ev){ ev.preventDefault(); ev.currentTarget.classList.add('dragover'); }
+function onDragLeaveZone(ev){ ev.currentTarget.classList.remove('dragover'); }
+
+function onDropZone(ev, area){
+  ev.preventDefault();
+  ev.currentTarget.classList.remove('dragover');
+  const team = currentTeam();
+  if(!team || !dragTalentId) return;
+  const round = state.session.currentRound;
+  const key = team.id+'_'+round;
+  const draft = draftFor(team.id, round);
+  // remove talent from any other area first
+  Object.keys(draft).forEach(a=>{ if(draft[a]===dragTalentId) delete draft[a]; });
+  // if area occupied, swap it back to tray (delete it)
+  draft[area] = dragTalentId;
+  window.__draft[key] = draft;
+  dragTalentId = null;
+  render();
+}
+function onDropTray(ev){
+  ev.preventDefault();
+  const team = currentTeam();
+  if(!team || !dragTalentId) return;
+  const round = state.session.currentRound;
+  const key = team.id+'_'+round;
+  const draft = draftFor(team.id, round);
+  Object.keys(draft).forEach(a=>{ if(draft[a]===dragTalentId) delete draft[a]; });
+  window.__draft[key] = draft;
+  dragTalentId = null;
+  render();
+}
+
+function lockPlanningBoard(){
+  const team = currentTeam();
+  if(!team) return;
+  const round = state.session.currentRound;
+  const key = team.id+'_'+round;
+  const draft = draftFor(team.id, round);
+  const filled = AREAS.filter(a=>draft[a]).length;
+  if(filled < AREAS.length){ toast('Place all 5 talents into Areas A–E before locking.','warn'); return; }
+  // remove any existing assignment rows for this team/round then commit fresh
+  state.assignments = state.assignments.filter(a=>!(a.teamId===team.id && a.round===round));
+  commitAssignment(team, round, draft);
+  lockTeamRound(team, round);
+}
+
+/* ============================== RENDER: LOGIN ============================== */
+
+function renderLogin(){
+  const mode = state.ui.loginMode;
+  let body = '';
+  if(mode==='team'){
+    body = '<div class="field"><label>Team Code</label><input type="text" id="teamCodeInput" placeholder="e.g. T1-XXX" autofocus></div>'
+      +'<button class="btn btn-amber btn-block" onclick="loginAsTeam(document.getElementById(\'teamCodeInput\').value)">Enter Simulation</button>'
+      +'<div style="margin-top:10px;"><button class="btn btn-ghost btn-sm" onclick="setLoginMode(null)">← Back</button></div>'
+      +'<div class="panel" style="margin-top:18px;"><div class="panel-head"><h3>Issued Team Codes</h3></div><table><tbody>'
+      +state.teams.map(t=>'<tr><td><span class="color-dot" style="background:'+t.color+'"></span> '+esc(t.name)+'</td><td class="mono">'+t.code+'</td></tr>').join('')
+      +'</tbody></table></div>';
+  } else if(mode==='facilitator'){
+    body = '<div class="field"><label>Facilitator Key</label><input type="password" id="facKeyInput" placeholder="Facilitator key" autofocus></div>'
+      +'<button class="btn btn-amber btn-block" onclick="loginAsFacilitator(document.getElementById(\'facKeyInput\').value)">Open Admin Console</button>'
+      +'<div class="dimmer small" style="margin-top:8px;">Demo key: FACILITATOR</div>'
+      +'<div style="margin-top:10px;"><button class="btn btn-ghost btn-sm" onclick="setLoginMode(null)">← Back</button></div>';
+  } else {
+    body = '<button class="btn btn-amber btn-block" style="padding:14px;margin-bottom:10px;" onclick="setLoginMode(\'team\')">Team Login</button>'
+      +'<button class="btn btn-ghost btn-block" style="padding:10px;font-size:11px;" onclick="setLoginMode(\'facilitator\')">Facilitator Access</button>';
+  }
+  return '<div class="login-shell"><div class="login-card">'
+    +'<div class="panel">'
+    +'<div class="login-title">'+esc(state.session.name)+'</div>'
+    +'<div class="login-sub">Workforce lifecycle simulation · '+state.teams.length+' teams · '+state.session.numRounds+' rounds</div>'
+    +body
+    +'</div></div></div>';
+}
+function setLoginMode(m){ state.ui.loginMode = m; render(); }
+
+/* ============================== RENDER: TOPBAR ============================== */
+
+function renderTopbar(){
+  const team = currentTeam();
+  let left = '<div class="topbar-left"><div class="topbar-brand"><div class="t1">Control Deck</div><div class="t2">'+esc(state.session.name)+'</div></div></div>';
+  let right = '<div class="topbar-right">';
+  if(team){
+    right += '<div class="team-chip"><span class="color-dot" style="background:'+team.color+'"></span>'+esc(team.name)+'</div>';
+    right += '<div class="readout"><div class="label">Budget</div><div class="value">'+team.budget+'</div></div>';
+    right += '<div class="readout"><div class="label">Final Score</div><div class="value">'+team.final+'</div></div>';
+  } else if(state.role && state.role.type==='facilitator'){
+    right += '<div class="badge badge-warn">FACILITATOR MODE</div>';
+  }
+  right += '<div class="badge '+(state.gameClosed?'badge-danger':'badge-open')+'">'+phaseLabel()+'</div>';
+  if(state.role){
+    right += '<button class="btn btn-ghost btn-sm" onclick="logout()">Switch Role</button>';
+  }
+  right += '</div>';
+  return '<div class="topbar">'+left+right+'</div>';
+}
+
+/* ============================== RENDER: TEAM PORTAL ============================== */
+
+function teamTabs(){
+  const tabs = [
+    ['dashboard','Dashboard'],
+    ['evp','EVP Workspace'],
+    ['market','Marketplace'],
+    ['board','Planning Board'],
+    ['ops','Operations'],
+    ['events','Event Center'],
+    ['leaderboard','Leaderboard'],
+  ];
+  return '<div class="tabs">'+tabs.map(([k,l])=>'<button class="tab'+(state.ui.teamTab===k?' active':'')+'" onclick="setTeamTab(\''+k+'\')">'+l+'</button>').join('')+'</div>';
+}
+function setTeamTab(k){ state.ui.teamTab=k; render(); }
+
+function renderTeamDashboard(team){
+  const steps = [
+    ['EVP Submission', team.evpSubmitted, state.phaseStatus.evp],
+    ['Recruitment', team.roster.length>=5, state.phaseStatus.marketplace],
+    ['Round Assignments', state.rounds.filter(r=>r.teamSubs[team.id]).length+'/'+state.session.numRounds, null],
+  ];
+  return '<div class="stack">'
+    +'<div class="grid grid-3">'
+      +'<div class="panel"><div class="panel-head"><h3>Budget</h3></div><div class="mono" style="font-size:28px;font-weight:700;">'+team.budget+'</div><div class="dim small">coins available to spend</div></div>'
+      +'<div class="panel"><div class="panel-head"><h3>Roster</h3></div><div class="mono" style="font-size:28px;font-weight:700;">'+team.roster.length+'/5</div><div class="dim small">1 Gold + 4 Silver target · shared by up to '+state.session.playersPerTeam+' players</div></div>'
+      +'<div class="panel"><div class="panel-head"><h3>Final Score</h3></div><div class="mono" style="font-size:28px;font-weight:700;color:var(--amber);">'+team.final+'</div><div class="dim small">40% Op · 40% Ready · 20% Complementary</div></div>'
+    +'</div>'
+    +'<div class="panel">'
+    +'<div class="panel-head"><h3>Phase Progress</h3><span class="hint">'+phaseLabel()+'</span></div>'
+    +'<table><tbody>'
+    +'<tr><td>EVP submitted</td><td>'+(team.evpSubmitted?'<span class="badge badge-open">Submitted</span>':'<span class="badge badge-locked">Pending</span>')+'</td></tr>'
+    +'<tr><td>Roster complete</td><td>'+(team.roster.length>=5?'<span class="badge badge-open">Complete</span>':'<span class="badge badge-locked">'+team.roster.length+'/5</span>')+'</td></tr>'
+    +state.rounds.map(r=>'<tr><td>Round '+r.number+' assignment</td><td>'+(r.teamSubs[team.id]?'<span class="badge badge-open">Locked</span>':(r.status==='open'?'<span class="badge badge-warn">Open</span>':'<span class="badge badge-locked">Locked / N-A</span>'))+'</td></tr>').join('')
+    +'</tbody></table></div>'
+    +(state.gameClosed ? '<div class="panel" style="border-color:var(--amber);"><div class="panel-head"><h3>Session Result</h3></div>'
+      + (state.winnerTeamId===team.id ? '<div style="font-size:18px;color:var(--amber);font-weight:700;">🏆 '+esc(team.name)+' wins the simulation.</div>' : '<div>Winner: <strong>'+esc((state.teams.find(t=>t.id===state.winnerTeamId)||{}).name||'—')+'</strong></div>')
+      +'</div>' : '')
+    +'</div>';
+}
+
+function renderEVPWorkspace(team){
+  if(state.phaseStatus.evp==='locked'){
+    return '<div class="panel"><div class="panel-head"><h3>EVP Workspace</h3></div><p class="dim">This phase has not been unlocked by the facilitator yet.</p></div>';
+  }
+  const locked = team.evpSubmitted;
+  return '<div class="grid grid-2">'
+    +'<div class="panel"><div class="panel-head"><h3>Brief</h3></div>'
+    +'<p class="dim small">Draft an Employee Value Proposition strategy for your team. Cover what you offer talent across compensation, growth, purpose, flexibility, and culture. Your facilitator will score this submission — a stronger EVP converts into more starting budget for recruitment.</p>'
+    +'<div class="kv"><span>Multiplier</span><span class="mono">×'+state.session.evpMultiplier+' coins per point</span></div>'
+    +'<div class="kv"><span>Status</span><span>'+(locked?'<span class="badge badge-open">Submitted</span>':'<span class="badge badge-warn">Drafting</span>')+'</span></div>'
+    +'</div>'
+    +'<div class="panel"><div class="panel-head"><h3>Submission</h3></div>'
+    +'<div class="field"><textarea id="evpText" '+(locked?'disabled':'')+' placeholder="Our EVP is built on...">'+esc(team.evpText)+'</textarea></div>'
+    +(locked
+      ? '<div class="badge badge-open">Locked — awaiting facilitator score</div>'
+      : '<div class="row">'
+        +'<button class="btn btn-ghost" onclick="saveEVPDraft()">Save Draft</button>'
+        +'<button class="btn btn-amber" onclick="submitEVP()">Submit Final</button>'
+        +'</div>')
+    +'</div></div>';
+}
+function saveEVPDraft(){
+  const team = currentTeam(); if(!team) return;
+  team.evpText = document.getElementById('evpText').value;
+  persistAndRender();
+  toast('Draft saved.');
+}
+function submitEVP(){
+  const team = currentTeam(); if(!team) return;
+  team.evpText = document.getElementById('evpText').value;
+  if(!team.evpText.trim()){ toast('Write something before submitting.','warn'); return; }
+  team.evpSubmitted = true;
+  logAction('Submit', team.id, 'EVP submitted');
+  persistAndRender();
+}
+
+function renderMarketplace(team){
+  if(state.phaseStatus.marketplace==='locked'){
+    return '<div class="panel"><div class="panel-head"><h3>Talent Marketplace</h3></div><p class="dim">The Marketplace unlocks once your facilitator scores EVP submissions and applies budgets.</p></div>';
+  }
+  const closed = state.phaseStatus.marketplace==='closed';
+  const gold = state.talents.filter(t=>t.tier==='Gold');
+  const silver = state.talents.filter(t=>t.tier==='Silver');
+  const roster = teamRoster(team);
+  return '<div class="row" style="align-items:flex-start;">'
+    +'<div style="flex:1;min-width:320px;" class="stack">'
+      +'<div class="panel"><div class="panel-head"><h3>Gold Tier</h3><span class="hint">1 slot</span></div><div class="grid grid-3">'+gold.map(t=>talentCardMarket(t,team)).join('')+'</div></div>'
+      +'<div class="panel"><div class="panel-head"><h3>Silver Tier</h3><span class="hint">4 slots</span></div><div class="grid grid-3">'+silver.map(t=>talentCardMarket(t,team)).join('')+'</div></div>'
+    +'</div>'
+    +'<div style="width:260px;flex:none;" class="panel">'
+      +'<div class="panel-head"><h3>Your Roster</h3></div>'
+      +'<div class="mono" style="font-size:22px;font-weight:700;margin-bottom:6px;">'+team.budget+' <span class="small dim" style="font-family:var(--font-d);">coins left</span></div>'
+      +(roster.length? roster.map(t=>'<div class="kv"><span>'+esc(t.name)+'</span><span class="badge '+(t.tier==='Gold'?'badge-gold':'badge-silver')+'">'+t.tier+'</span></div>').join('') : '<p class="dimmer small">No talent recruited yet.</p>')
+      +(closed?'<div class="badge badge-locked" style="margin-top:10px;">Marketplace closed</div>':'')
+    +'</div></div>';
+}
+
+function renderPlanningBoard(team){
+  const round = state.session.currentRound;
+  if(round===0){
+    return '<div class="panel"><div class="panel-head"><h3>Planning Board</h3></div><p class="dim">Rounds open once recruitment closes.</p></div>';
+  }
+  const r = state.rounds[round-1];
+  const locked = r.teamSubs[team.id];
+  const key = team.id+'_'+round;
+  const draft = locked ? boardPlacementsForTeam(team, round) : draftFor(team.id, round);
+  const roster = teamRoster(team).filter(t=>t.active);
+  const placedIds = new Set(Object.values(draft).filter(Boolean));
+  const trayTalents = roster.filter(t=>!placedIds.has(t.id));
+
+  const trayHtml = trayTalents.length
+    ? trayTalents.map(t=>'<div class="tray-card" draggable="'+(locked?'false':'true')+'" ondragstart="onDragStart(event,\''+t.id+'\')"><div class="talent-name small">'+esc(t.name)+'</div><span class="badge '+(t.tier==='Gold'?'badge-gold':'badge-silver')+'">'+t.tier+'</span></div>').join('')
+    : '<span class="dimmer small">All talents placed.</span>';
+
+  const boardHtml = AREAS.map(a=>{
+    const talentId = draft[a];
+    const talent = talentId ? state.talents.find(t=>t.id===talentId) : null;
+    return '<div class="area-col">'
+      +'<div class="area-head"><span>'+a+'</span><span class="dim small" style="font-family:var(--font-d);font-weight:400;">'+AREA_NAMES[a]+'</span></div>'
+      +'<div class="area-body" ondragover="onDragOverZone(event)" ondragleave="onDragLeaveZone(event)" ondrop="onDropZone(event,\''+a+'\')">'
+      +(talent
+        ? '<div class="tray-card" draggable="'+(locked?'false':'true')+'" ondragstart="onDragStart(event,\''+talent.id+'\')"><div class="talent-name small">'+esc(talent.name)+'</div><div class="mono small dim">Skill '+a+': '+talent.skills[a]+'</div></div>'
+        : '<div class="area-empty">Drop talent here</div>')
+      +'</div></div>';
+  }).join('');
+
+  return '<div class="stack">'
+    +'<div class="panel"><div class="panel-head"><h3>Round '+round+' — Unassigned Roster</h3><span class="hint">Drag a card into an Area A–E column</span></div>'
+    +'<div class="tray" ondragover="onDragOverZone(event)" ondragleave="onDragLeaveZone(event)" ondrop="onDropTray(event)">'+trayHtml+'</div></div>'
+    +'<div class="board">'+boardHtml+'</div>'
+    +'<div class="panel">'
+    +(locked
+      ? '<span class="badge badge-open">Assignment locked for Round '+round+'</span>'
+      : '<button class="btn btn-amber" onclick="lockPlanningBoard()">Lock Assignment</button> <span class="dim small">All 5 areas must be filled.</span>')
+    +'</div></div>';
+}
+
+function renderOpsDashboard(team){
+  const scored = state.rounds.filter(r=>r.status==='scored');
+  return '<div class="stack">'
+    +'<div class="grid grid-3">'
+      +'<div class="panel"><div class="panel-head"><h3>Operational</h3></div><div class="mono" style="font-size:26px;font-weight:700;">'+team.operational+'</div></div>'
+      +'<div class="panel"><div class="panel-head"><h3>Readiness</h3></div><div class="mono" style="font-size:26px;font-weight:700;">'+team.readiness+'</div></div>'
+      +'<div class="panel"><div class="panel-head"><h3>Complementary</h3></div><div class="mono" style="font-size:26px;font-weight:700;">'+team.complementary+'</div></div>'
+    +'</div>'
+    +'<div class="panel"><div class="panel-head"><h3>Round Results</h3></div>'
+    +(scored.length ? '<table><thead><tr><th>Round</th><th>Operational</th></tr></thead><tbody>'
+      +scored.map(r=>'<tr><td>Round '+r.number+'</td><td class="mono">'+(r.results[team.id]!==undefined?r.results[team.id]:'—')+'</td></tr>').join('')
+      +'</tbody></table>' : '<p class="dim small">No rounds scored yet.</p>')
+    +'</div>'
+    +'<div class="panel"><div class="panel-head"><h3>Talent Learning</h3></div><table><thead><tr><th>Talent</th><th>Tier</th><th>Learning</th></tr></thead><tbody>'
+    +teamRoster(team).map(t=>'<tr><td>'+esc(t.name)+(t.active?'':' <span class="badge badge-danger">inactive</span>')+'</td><td><span class="badge '+(t.tier==='Gold'?'badge-gold':'badge-silver')+'">'+t.tier+'</span></td><td><div class="progress-track" style="width:120px;"><div class="progress-fill" style="width:'+t.learning+'%"></div></div><span class="mono small">'+t.learning+'/100</span></td></tr>').join('')
+    +'</tbody></table></div></div>';
+}
+
+function renderEventCenter(team){
+  const myEvents = state.events.filter(e=>e.targetTeamId===team.id);
+  return '<div class="panel"><div class="panel-head"><h3>Event Center</h3></div>'
+    +(myEvents.length ? '<div class="stack">'+myEvents.map(e=>{
+        const talent = state.talents.find(t=>t.id===e.targetTalentId);
+        return '<div class="event-card '+(e.status==='Triggered'?'unresolved':'')+'">'
+          +'<div class="event-icon">'+e.type.slice(0,2).toUpperCase()+'</div>'
+          +'<div style="flex:1;"><div style="font-weight:600;">'+e.type+' — Round '+e.round+'</div>'
+          +'<div class="dim small" style="margin:4px 0;">'+esc(e.description)+'</div>'
+          +'<div class="small dimmer">Status: '+e.status+'</div>'
+          +(e.status==='Triggered' ? '<button class="btn btn-sm btn-cyan" style="margin-top:6px;" onclick="acknowledgeEvent(\''+e.id+'\')">Acknowledge &amp; Go to Planning Board</button>' : '')
+          +'</div></div>';
+      }).join('')+'</div>'
+      : '<p class="dim small">No disruption events yet for your team.</p>')
+    +'</div>';
+}
+
+function renderLeaderboardScreen(team){
+  if(!state.leaderboardPublished){
+    return '<div class="panel"><div class="panel-head"><h3>Leaderboard</h3></div><p class="dim">The facilitator has not published standings yet.</p></div>';
+  }
+  return renderLeaderboardTable();
+}
+
+function renderLeaderboardTable(){
+  const ranked = [...state.teams].sort((a,b)=>b.final-a.final);
+  return '<div class="panel"><div class="panel-head"><h3>Leaderboard</h3><span class="hint">40% Operational · 40% Readiness · 20% Complementary</span></div>'
+    +ranked.map((t,i)=>{
+      return '<div class="lb-row">'
+        +'<div class="lb-rank'+(i===0?' top':'')+'">'+(i+1)+'</div>'
+        +'<div><span class="color-dot" style="background:'+t.color+'"></span> '+esc(t.name)+(state.winnerTeamId===t.id?' 🏆':'')+'</div>'
+        +'<div class="lb-score"><div class="num">'+t.operational+'</div><div class="lbl">Operational</div></div>'
+        +'<div class="lb-score"><div class="num">'+t.readiness+'</div><div class="lbl">Readiness</div></div>'
+        +'<div class="lb-score"><div class="num">'+t.complementary+'</div><div class="lbl">Complementary</div></div>'
+        +'<div class="lb-score"><div class="num" style="color:var(--amber);font-size:18px;">'+t.final+'</div><div class="lbl">Final</div></div>'
+        +'</div>';
+    }).join('')
+    +'</div>';
+}
+
+function renderTeamPortal(){
+  const team = currentTeam();
+  if(!team) return renderLogin();
+  let body = '';
+  switch(state.ui.teamTab){
+    case 'evp': body = renderEVPWorkspace(team); break;
+    case 'market': body = renderMarketplace(team); break;
+    case 'board': body = renderPlanningBoard(team); break;
+    case 'ops': body = renderOpsDashboard(team); break;
+    case 'events': body = renderEventCenter(team); break;
+    case 'leaderboard': body = renderLeaderboardScreen(team); break;
+    default: body = renderTeamDashboard(team);
+  }
+  return '<div class="content">'+teamTabs()+body+'</div>';
+}
+
+/* ============================== RENDER: ADMIN CONSOLE ============================== */
+
+function adminNav(){
+  const items = [
+    ['teams','Teams'],
+    ['phases','Phases'],
+    ['scoring','Scoring'],
+    ['disruptions','Disruptions'],
+    ['leaderboard','Leaderboard'],
+    ['logs','Logs'],
+  ];
+  return '<div class="sidenav">'+items.map(([k,l])=>'<button class="sidenav-item'+(state.ui.adminTab===k?' active':'')+'" onclick="setAdminTab(\''+k+'\')">'+l+'</button>').join('')
+    +'<div style="margin-top:16px;border-top:1px solid var(--line-soft);padding-top:12px;">'
+    +'<button class="btn btn-red btn-sm btn-block" onclick="resetSimulation()">Reset Simulation</button>'
+    +'</div></div>';
+}
+function setAdminTab(k){ state.ui.adminTab=k; render(); }
+
+function renderAdminTeams(){
+  return '<div class="panel"><div class="panel-head"><h3>Teams</h3><span class="hint">'+state.teams.length+' teams · '+state.session.playersPerTeam+' players/team capacity</span></div>'
+    +'<table><thead><tr><th>Team</th><th>Code</th><th>Budget</th><th>Roster</th><th>EVP</th><th>Final</th></tr></thead><tbody>'
+    +state.teams.map(t=>'<tr><td><span class="color-dot" style="background:'+t.color+'"></span> '+esc(t.name)+'</td>'
+      +'<td class="mono">'+t.code+'</td>'
+      +'<td class="mono">'+t.budget+'</td>'
+      +'<td>'+t.roster.length+'/5</td>'
+      +'<td>'+(t.evpScore!==null?t.evpScore:'—')+'</td>'
+      +'<td class="mono">'+t.final+'</td></tr>').join('')
+    +'</tbody></table></div>'
+    +'<div class="panel"><div class="panel-head"><h3>Cohort Size</h3><span class="hint">'+MIN_TEAMS+'–'+MAX_TEAMS+' teams, '+MIN_PLAYERS_PER_TEAM+'–'+MAX_PLAYERS_PER_TEAM+' players/team</span></div>'
+    +'<p class="dim small">Rebuilding regenerates every team (new codes, empty rosters) and clears scores/events — use this before a session starts, not mid-game.</p>'
+    +'<div class="grid grid-3">'
+    +'<div class="field"><label>Number of Teams</label><input type="number" id="cfgNumTeams" min="'+MIN_TEAMS+'" max="'+MAX_TEAMS+'" value="'+state.session.numTeams+'"></div>'
+    +'<div class="field"><label>Players per Team</label><input type="number" id="cfgPlayersPerTeam" min="'+MIN_PLAYERS_PER_TEAM+'" max="'+MAX_PLAYERS_PER_TEAM+'" value="'+state.session.playersPerTeam+'"></div>'
+    +'<div class="field"><label>&nbsp;</label><button class="btn btn-red btn-block" onclick="applyTeamConfig(document.getElementById(\'cfgNumTeams\').value, document.getElementById(\'cfgPlayersPerTeam\').value)">Apply &amp; Rebuild Teams</button></div>'
+    +'</div></div>'
+    +'<div class="panel"><div class="panel-head"><h3>Session Settings</h3></div>'
+    +'<div class="grid grid-3">'
+    +'<div class="field"><label>Session Name</label><input type="text" value="'+esc(state.session.name)+'" onchange="updateSessionField(\'name\',this.value)"></div>'
+    +'<div class="field"><label>EVP → Coin Multiplier</label><input type="number" value="'+state.session.evpMultiplier+'" onchange="updateSessionField(\'evpMultiplier\',parseFloat(this.value)||1)"></div>'
+    +'<div class="field"><label>Rounds</label><input type="text" value="'+state.session.numRounds+'" disabled></div>'
+    +'</div></div>';
+}
+function updateSessionField(field,val){ state.session[field]=val; persistAndRender(); }
+
+function renderAdminPhases(){
+  let html = '<div class="panel"><div class="panel-head"><h3>Phase 1 — EVP</h3><span class="badge '+(state.phaseStatus.evp==='open'?'badge-warn':state.phaseStatus.evp==='closed'?'badge-open':'badge-locked')+'">'+state.phaseStatus.evp+'</span></div>';
+  if(state.phaseStatus.evp==='locked'){
+    html += '<button class="btn btn-amber" onclick="unlockEVP()">Unlock EVP Workspace</button>';
+  } else if(state.phaseStatus.evp==='open'){
+    html += '<p class="dim small">Submissions: '+state.teams.filter(t=>t.evpSubmitted).length+'/'+state.teams.length+' teams. Score each team in the Scoring tab, then apply.</p>'
+      +'<button class="btn btn-green" onclick="closeEVPApplyScores()">Apply Scores &amp; Unlock Marketplace</button>';
+  } else {
+    html += '<p class="dim small">Closed. Budgets applied to all teams.</p>';
+  }
+  html += '</div>';
+
+  html += '<div class="panel"><div class="panel-head"><h3>Phase 2 — Marketplace</h3><span class="badge '+(state.phaseStatus.marketplace==='open'?'badge-warn':state.phaseStatus.marketplace==='closed'?'badge-open':'badge-locked')+'">'+state.phaseStatus.marketplace+'</span></div>';
+  if(state.phaseStatus.marketplace==='open'){
+    html += '<p class="dim small">Rosters complete: '+state.teams.filter(t=>t.roster.length>=5).length+'/'+state.teams.length+'</p>'
+      +'<button class="btn btn-green" onclick="closeMarketplace()">Close Marketplace &amp; Open Round 1</button>';
+  } else if(state.phaseStatus.marketplace==='closed'){
+    html += '<p class="dim small">Closed. Rounds are underway.</p>';
+  } else {
+    html += '<p class="dim small">Awaiting EVP phase to close.</p>';
+  }
+  html += '</div>';
+
+  if(state.phaseStatus.marketplace==='closed'){
+    state.rounds.forEach(r=>{
+      const isCurrent = r.number===state.session.currentRound;
+      html += '<div class="panel"><div class="panel-head"><h3>Round '+r.number+'</h3><span class="badge '+(r.status==='scored'?'badge-open':r.status==='open'?'badge-warn':'badge-locked')+'">'+r.status+'</span></div>';
+      if(isCurrent && r.status==='open'){
+        const locked = state.teams.filter(t=>r.teamSubs[t.id]).length;
+        html += '<p class="dim small">Assignments locked: '+locked+'/'+state.teams.length+'</p>'
+          +'<button class="btn btn-cyan" onclick="scoreCurrentRound()">Score Round '+r.number+'</button>';
+      } else if(isCurrent && r.status==='scored'){
+        html += '<p class="dim small">Round scored. Trigger disruptions if desired, then publish and advance.</p>'
+          +'<div class="row"><button class="btn btn-green" onclick="publishLeaderboard()">Publish Leaderboard</button>'
+          +'<button class="btn btn-amber" onclick="unlockNextRound()">'+(r.number<state.session.numRounds?'Unlock Round '+(r.number+1):'Close Session')+'</button></div>';
+      } else if(r.status==='scored'){
+        html += '<p class="dim small">Score: '+state.teams.map(t=>esc(t.name)+' '+(r.results[t.id]??'—')).join(' · ')+'</p>';
+      } else {
+        html += '<p class="dimmer small">Not yet reached.</p>';
+      }
+      html += '</div>';
+    });
+  }
+
+  if(state.gameClosed){
+    const winner = state.teams.find(t=>t.id===state.winnerTeamId);
+    html += '<div class="panel" style="border-color:var(--amber);"><div class="panel-head"><h3>Session Closed</h3></div>'
+      +'<p>Winner: <strong style="color:var(--amber);">'+esc(winner?winner.name:'—')+'</strong></p>'
+      +(state.winnerTeamId?'':'<button class="btn btn-amber" onclick="declareWinner()">Declare Winner</button>')
+      +'</div>';
+  }
+  return html;
+}
+
+function renderAdminScoring(){
+  let html = '<div class="panel"><div class="panel-head"><h3>EVP Scoring</h3><span class="hint">0–100 per team, drives starting budget</span></div>'
+    +'<table><thead><tr><th>Team</th><th>Submission</th><th>Score</th></tr></thead><tbody>'
+    +state.teams.map(t=>'<tr><td><span class="color-dot" style="background:'+t.color+'"></span>'+esc(t.name)+'</td>'
+      +'<td class="dim small" style="max-width:340px;">'+(t.evpText? esc(t.evpText.slice(0,140))+(t.evpText.length>140?'…':'') : '<span class="dimmer">No submission</span>')+'</td>'
+      +'<td><input type="number" min="0" max="100" style="width:80px;" value="'+(t.evpScore??'')+'" onchange="setEvpScore(\''+t.id+'\',this.value)" '+(state.phaseStatus.evp==='closed'?'disabled':'')+'></td></tr>').join('')
+    +'</tbody></table></div>';
+
+  html += '<div class="panel"><div class="panel-head"><h3>Round Production Results</h3><span class="hint">Auto-computed from skill fit; scored via Phases tab</span></div>';
+  const scored = state.rounds.filter(r=>r.status==='scored');
+  if(scored.length){
+    html += '<table><thead><tr><th>Team</th>'+scored.map(r=>'<th>Round '+r.number+'</th>').join('')+'<th>Operational Avg</th></tr></thead><tbody>'
+      +state.teams.map(t=>'<tr><td>'+esc(t.name)+'</td>'+scored.map(r=>'<td class="mono">'+(r.results[t.id]??'—')+'</td>').join('')+'<td class="mono" style="font-weight:700;">'+t.operational+'</td></tr>').join('')
+      +'</tbody></table>';
+  } else {
+    html += '<p class="dim small">No rounds scored yet.</p>';
+  }
+  html += '</div>';
+  return html;
+}
+function setEvpScore(teamId, val){
+  const t = state.teams.find(x=>x.id===teamId);
+  if(!t) return;
+  const n = Math.max(0, Math.min(100, parseInt(val,10)||0));
+  t.evpScore = n;
+  persistAndRender();
+}
+
+function renderAdminDisruptions(){
+  const teamId = state.ui.selectedEventTeam || (state.teams[0] && state.teams[0].id) || '';
+  const team = state.teams.find(t=>t.id===teamId);
+  const roster = team ? teamRoster(team).filter(t=>t.active) : [];
+  const talentId = state.ui.selectedEventTalent || (roster[0] && roster[0].id) || '';
+
+  let html = '<div class="panel"><div class="panel-head"><h3>Trigger Disruption</h3><span class="hint">Round '+(state.session.currentRound||'—')+'</span></div>';
+  if(state.session.currentRound===0){
+    html += '<p class="dim small">Disruptions become available once Round 1 is open.</p></div>';
+    return html;
+  }
+  html += '<div class="grid grid-3">'
+    +'<div class="field"><label>Event Type</label><select onchange="state.ui.selectedEventType=this.value;render();">'
+      +['Retirement','Rotation','Resignation','LEAP'].map(o=>'<option value="'+o+'" '+(state.ui.selectedEventType===o?'selected':'')+'>'+o+'</option>').join('')
+    +'</select></div>'
+    +'<div class="field"><label>Target Team</label><select onchange="state.ui.selectedEventTeam=this.value; state.ui.selectedEventTalent=\'\'; render();">'
+      +state.teams.map(t=>'<option value="'+t.id+'" '+(teamId===t.id?'selected':'')+'>'+esc(t.name)+'</option>').join('')
+    +'</select></div>'
+    +'<div class="field"><label>Target Talent</label><select onchange="state.ui.selectedEventTalent=this.value;render();">'
+      +roster.map(t=>'<option value="'+t.id+'" '+(talentId===t.id?'selected':'')+'>'+esc(t.name)+' ('+t.tier+')</option>').join('')
+    +'</select></div>'
+    +'</div>'
+    +'<p class="dim small">'+disruptionBlurb(state.ui.selectedEventType)+'</p>'
+    +'<button class="btn btn-red" onclick="fireEvent()">Trigger Event</button>'
+    +'</div>';
+
+  html += '<div class="panel"><div class="panel-head"><h3>Event Log</h3></div>'
+    +(state.events.length ? state.events.map(e=>{
+        const t = state.teams.find(x=>x.id===e.targetTeamId);
+        return '<div class="event-card" style="margin-bottom:8px;"><div class="event-icon">'+e.type.slice(0,2).toUpperCase()+'</div>'
+          +'<div><div style="font-weight:600;">'+e.type+' · '+esc(t?t.name:'')+' · Round '+e.round+'</div>'
+          +'<div class="dim small">'+esc(e.description)+'</div></div></div>';
+      }).join('') : '<p class="dim small">No events triggered yet.</p>')
+    +'</div>';
+  return html;
+}
+function disruptionBlurb(type){
+  return type==='Retirement' ? 'Permanently removes the talent from the roster and clears their current-round placement.'
+    : type==='Rotation' ? 'Clears the talent\'s current-round placement; team must re-place them before locking.'
+    : type==='Resignation' ? 'Removes the talent from the roster entirely; team may recruit a replacement if budget allows.'
+    : 'Composite event: clears current placement and grants the team a +10 Operational bonus this round.';
+}
+function fireEvent(){
+  const teamId = state.ui.selectedEventTeam || state.teams[0].id;
+  const team = state.teams.find(t=>t.id===teamId);
+  const roster = teamRoster(team).filter(t=>t.active);
+  const talentId = state.ui.selectedEventTalent || (roster[0] && roster[0].id);
+  if(!talentId){ toast('No eligible talent on that roster.','warn'); return; }
+  triggerDisruptionEvent(state.ui.selectedEventType, teamId, talentId);
+  persistAndRender();
+}
+
+function renderAdminLogs(){
+  return '<div class="panel"><div class="panel-head"><h3>Facilitator Action Log</h3><span class="hint">'+state.logs.length+' entries</span></div>'
+    +(state.logs.length ? '<table><thead><tr><th>Time</th><th>Action</th><th>Team</th><th>Detail</th></tr></thead><tbody>'
+      +state.logs.map(l=>{
+        const t = l.teamId ? state.teams.find(x=>x.id===l.teamId) : null;
+        return '<tr><td class="mono small">'+new Date(l.timestamp).toLocaleTimeString()+'</td><td>'+l.type+'</td><td>'+(t?esc(t.name):'—')+'</td><td class="dim small">'+esc(l.details)+'</td></tr>';
+      }).join('')+'</tbody></table>' : '<p class="dim small">No actions logged yet.</p>')
+    +'</div>';
+}
+
+function renderAdminConsole(){
+  let body = '';
+  switch(state.ui.adminTab){
+    case 'phases': body = renderAdminPhases(); break;
+    case 'scoring': body = renderAdminScoring(); break;
+    case 'disruptions': body = renderAdminDisruptions(); break;
+    case 'leaderboard': body = renderLeaderboardTable()+ (state.leaderboardPublished?'':'<div class="panel"><button class="btn btn-green" onclick="publishLeaderboard()">Publish to Teams</button></div>') + (state.gameClosed && !state.winnerTeamId ? '<div class="panel"><button class="btn btn-amber" onclick="declareWinner()">Declare Winner</button></div>' : ''); break;
+    case 'logs': body = renderAdminLogs(); break;
+    default: body = renderAdminTeams();
+  }
+  return '<div class="main">'+adminNav()+'<div class="content">'+body+'</div></div>';
+}
+
+/* ============================== ROOT RENDER ============================== */
+
+function render(){
+  const app = document.getElementById('app');
+  let html = '';
+  if(!state.role){
+    html = renderTopbar() + renderLogin();
+  } else if(state.role.type==='facilitator'){
+    html = renderTopbar() + renderAdminConsole();
+  } else {
+    html = renderTopbar() + renderTeamPortal();
+  }
+  html += '<div class="footer-tick"><span>Workforce Strategy Simulation · local session persistence</span><span>'+new Date().toLocaleString()+'</span></div>';
+  html += renderConfirmModal();
+  app.innerHTML = html;
+}
+
+render();
+</script>
+</body>
+</html>
